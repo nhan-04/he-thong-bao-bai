@@ -445,9 +445,9 @@
 <!-- SCRIPT LOGIC -->
 <script>
   // Thay URL dưới đây bằng URL Web App mới nhất bạn vừa copy ở Bước 1
-const API_URL = "https://script.google.com/macros/s/AKfycbwfuFI1CmeyND0txCg8jgc0wKJ2y5VmM84OzBdudJlRlJQjACusNF-V95OsAQepobXn/exec";
 // --- BIẾN TOÀN CỤC ---
 let globalTKB = [];
+const API_URL = "https://script.google.com/macros/s/AKfycbwfuFI1CmeyND0txCg8jgc0wKJ2y5VmM84OzBdudJlRlJQjACusNF-V95OsAQepobXn/exec";
 let viewDate = new Date();
 
 // --- UI CONTROLS ---
@@ -507,8 +507,18 @@ function doLogin() {
   
   btn.textContent = "Đang xử lý..."; btn.disabled = true;
 
-  // Gọi API thay vì dùng google.script.run
-  fetch(`${API_URL}?action=login&username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}`)
+  // Đổi sang POST và thêm headers text/plain để tránh lỗi CORS
+  fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    },
+    body: JSON.stringify({
+      action: "login",
+      username: u,
+      password: p
+    })
+  })
     .then(response => response.json())
     .then(res => {
       btn.textContent = "Đăng Nhập"; btn.disabled = false;
@@ -519,7 +529,8 @@ function doLogin() {
     })
     .catch(err => {
       btn.textContent = "Đăng Nhập"; btn.disabled = false;
-      showError("Lỗi đường truyền kết nối.");
+      showError("Lỗi đường truyền kết nối. Vui lòng thử lại.");
+      console.error(err);
     });
 }
 
@@ -531,33 +542,47 @@ function markHwDone(dateStr, hwIndex, btnEl) {
   btnEl.textContent = "Đang gửi...";
   btnEl.disabled = true;
 
-  fetch(`${API_URL}?action=updateHw&username=${encodeURIComponent(u)}&dateStr=${encodeURIComponent(dateStr)}&hwIndex=${hwIndex}`)
-    .then(response => response.json())
-    .then(res => {
-      if(res.status === "success") {
-        btnEl.className = "pill pill-green";
-        btnEl.textContent = "Đã hoàn thành";
-        btnEl.disabled = true;
-        
-        let hwCountEl = document.getElementById('tkb-hw');
-        if(hwCountEl) {
-          let currCount = parseInt(hwCountEl.textContent) || 0;
-          if(currCount > 0) hwCountEl.textContent = currCount - 1;
-        }
-        
-        let targetDay = globalTKB.find(item => item.date === dateStr);
-        if(targetDay && targetDay.hw[hwIndex]) targetDay.hw[hwIndex].status = "Hoàn thành";
-      } else {
-        alert("Lỗi: " + res.message);
-        btnEl.textContent = originalText;
-        btnEl.disabled = false;
-      }
+  // Thêm headers text/plain để vượt rào CORS của Google
+  fetch(API_URL, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'text/plain;charset=utf-8'
+    },
+    body: JSON.stringify({
+      action: "updateHw",
+      username: u,
+      dateStr: dateStr,
+      hwIndex: hwIndex
     })
-    .catch(err => {
-      alert("Lỗi đường truyền! Vui lòng thử lại.");
+  })
+  .then(response => response.json())
+  .then(res => {
+    if(res.status === "success") {
+      btnEl.className = "pill pill-green";
+      btnEl.textContent = "Đã hoàn thành";
+      btnEl.disabled = true;
+      
+      let hwCountEl = document.getElementById('tkb-hw');
+      if(hwCountEl) {
+        let currCount = parseInt(hwCountEl.textContent) || 0;
+        if(currCount > 0) hwCountEl.textContent = currCount - 1;
+      }
+      
+      let targetDay = globalTKB.find(item => item.date === dateStr);
+      if(targetDay && targetDay.hw[hwIndex]) targetDay.hw[hwIndex].status = "Hoàn thành";
+
+    } else {
+      alert("Lỗi: " + res.message);
       btnEl.textContent = originalText;
       btnEl.disabled = false;
-    });
+    }
+  })
+  .catch(err => {
+    alert("Lỗi đường truyền! Vui lòng thử lại.");
+    btnEl.textContent = originalText;
+    btnEl.disabled = false;
+    console.error(err);
+  });
 }
 
 // --- XỬ LÝ CHUYỂN NGÀY TKB ---
