@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeWIN – Hệ Thống Báo Bài</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --blue-dark:#1a3a8f; --blue-mid:#2755c8; --blue-light:#dbeafe;
+    --gold:#f5a623; --gold-light:#fef3c7;
+    --red-soft:#fee2e2; --red:#e53e3e;
+    --green:#22c55e; --green-light:#dcfce7;
+    --purple:#7c3aed; --purple-light:#ede9fe;
+    --bg:#eef3fb; --card:#ffffff;
+    --text:#1e2d5a; --muted:#6b7fa8; --border:#d4e0f7;
+    --radius:16px; --radius-sm:10px;
+  }
+  /* DATE NAVIGATOR */
+  .date-navigator {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--blue-light); padding: 10px 16px; border-radius: 20px;
+    margin: 16px 24px 0 24px; border: 1px solid var(--border);
+  }
+  .btn-date {
+    background: #fff; color: var(--blue-dark); border: 1px solid var(--border);
+    padding: 6px 14px; border-radius: 14px; font-weight: 800; font-family: 'Nunito', sans-serif;
+    cursor: pointer; transition: 0.2s; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  }
+  .btn-date:hover { background: var(--blue-mid); color: #fff; transform: translateY(-1px); }
+  .btn-date:active { transform: translateY(0); }
+  .btn-date:disabled {
+    background: #e2e8f0; color: #94a3b8; border-color: #cbd5e1;
+    cursor: not-allowed; box-shadow: none; transform: none !important;
+  }
+  .date-label { font-weight: 900; color: var(--blue-dark); font-size: 0.95rem; }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+  /* -------------------------------------- */
+  /* LOGIN OVERLAY */
+  /* -------------------------------------- */
+  .login-overlay{position:fixed;inset:0;background:linear-gradient(135deg,#e8f0fe,#dbeafe,#eff6ff);display:flex;align-items:center;justify-content:center;z-index:9999;}
+  .login-card{background:#fff;border-radius:24px;padding:44px 40px 36px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(26,58,143,.15);animation:slideUp .4s cubic-bezier(.16,1,.3,1);}
+  @keyframes slideUp{from{transform:translateY(24px);opacity:0}to{transform:translateY(0);opacity:1}}
+  .login-logo{text-align:center;margin-bottom:4px;}
+  .login-logo img {max-width: 240px; height: auto;}
+  .login-subtitle {text-align: center; font-size: 0.9rem; font-weight: 700; color: var(--muted); margin-top: 8px; margin-bottom: 32px; text-transform:uppercase; letter-spacing: 1px;}
+  .login-field{margin-bottom:18px;}
+  .login-label{display:block;font-size:.82rem;font-weight:800;color:var(--text);margin-bottom:7px;}
+  .login-label .req{color:var(--red);}
+  .login-input{width:100%;padding:13px 16px;border:1.5px solid var(--border);border-radius:12px;font-family:'Nunito',sans-serif;font-size:.9rem;color:var(--text);background:var(--bg);outline:none;transition:all .2s;}
+  .login-input:focus{border-color:var(--blue-mid);box-shadow:0 0 0 3px rgba(39,85,200,.12);background:#fff;}
+  .login-btn{width:100%;padding:14px;background:var(--blue-dark);color:#fff;border:none;border-radius:12px;font-family:'Nunito',sans-serif;font-size:.95rem;font-weight:900;letter-spacing:1px;text-transform:uppercase;cursor:pointer;margin-top:6px;transition:all .2s;}
+  .login-btn:hover{background:var(--blue-mid);transform:translateY(-1px);}
+  .login-error{background:var(--red-soft);color:var(--red);font-size:.82rem;font-weight:700;text-align:center;padding:10px;border-radius:10px;margin-top:12px;display:none;}
+  .login-error.show{display:block;}
+
+  /* -------------------------------------- */
+  /* TOPBAR */
+  /* -------------------------------------- */
+  .topbar{background:var(--blue-dark);padding:0 32px;height:60px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 12px rgba(26,58,143,.35);position:sticky;top:0;z-index:100;}
+  .topbar-logo img{height:34px;width:auto;object-fit:contain;}
+  .topbar-nav{display:flex;gap:4px;}
+  .topbar-nav a{position:relative;color:rgba(255,255,255,.7);text-decoration:none;font-size:.85rem;font-weight:800;padding:8px 16px;border-radius:20px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:6px;}
+  .topbar-nav a:hover,.topbar-nav a.active{background:rgba(255,255,255,.15);color:#fff;}
+  .nav-badge{position:absolute;top:-2px;right:-2px;background:var(--red);color:#fff;font-size:.6rem;font-weight:900;padding:2px 6px;border-radius:10px;border:2px solid var(--blue-dark);display:none;}
+  .topbar-user{display:flex;align-items:center;gap:10px;color:#fff;font-size:.85rem;font-weight:700;}
+  .avatar-sm{width:34px;height:34px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:900;color:var(--blue-dark);}
+/* USER DROPDOWN */
+  .topbar-user { position: relative; cursor: pointer; user-select: none; }
+  .user-dropdown {
+    display: none; position: absolute; top: 50px; right: 0;
+    background: #fff; border-radius: 12px; box-shadow: 0 8px 24px rgba(26,58,143,0.15);
+    overflow: hidden; min-width: 150px; z-index: 1000;
+    border: 1px solid var(--border);
+  }
+  .user-dropdown.show { display: block; animation: dropIn 0.2s ease; }
+  @keyframes dropIn { from{opacity:0; transform:translateY(-10px)} to{opacity:1; transform:translateY(0)} }
+  .dropdown-item {
+    padding: 12px 16px; color: var(--text); font-size: 0.85rem; font-weight: 800;
+    transition: all 0.2s;
+  }
+  .dropdown-item:hover { background: var(--red-soft); color: var(--red); }
+  /* -------------------------------------- */
+  /* LAYOUT */
+  /* -------------------------------------- */
+  .page-wrap{max-width:1160px;margin:28px auto;padding:0 20px;display:grid;grid-template-columns:290px 1fr;gap:24px;align-items:start;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:flex;flex-direction:column;gap:20px;animation:fadeIn .3s ease;}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+  /* -------------------------------------- */
+  /* SIDEBAR */
+  /* -------------------------------------- */
+  .sidebar{display:flex;flex-direction:column;gap:20px;}
+  .card{background:var(--card);border-radius:var(--radius);box-shadow:0 4px 16px rgba(26,58,143,.06);border:1px solid var(--border);overflow:hidden;}
+  
+  .profile-header{background:linear-gradient(135deg,var(--blue-dark),var(--blue-mid));padding:32px 20px 24px;text-align:center;position:relative;}
+  .profile-header::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:30px;background:var(--card);border-radius:50% 50% 0 0 / 30px 30px 0 0;}
+  .avatar-wrap{position:relative;display:inline-block;margin-bottom:16px;}
+  .avatar-placeholder{width:96px;height:96px;border-radius:50%;border:4px solid rgba(255,255,255,.9);background:var(--gold-light);display:flex;align-items:center;justify-content:center;font-size:2.4rem;overflow:hidden;}
+  .online-dot{width:16px;height:16px;background:var(--green);border:2px solid #fff;border-radius:50%;position:absolute;bottom:4px;right:4px;}
+  .profile-name{color:#fff;font-size:1.25rem;font-weight:900;margin-bottom:8px;}
+  .badge-class{display:inline-block;background:var(--gold);color:var(--blue-dark);font-size:.75rem;font-weight:900;padding:4px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px;}
+  .profile-nickname{color:rgba(255,255,255,.8);font-size:.85rem;font-style:italic;margin-top:6px;}
+  
+  .profile-body{padding:10px 24px 20px;}
+  .info-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--border);font-size:.85rem;}
+  .info-row:last-child{border-bottom:none;}
+  .info-row .ilbl{color:var(--muted);font-weight:700;min-width:40px;}
+  .info-row .ival{color:var(--text);font-weight:800;}
+
+  .section-title{font-size:.75rem;font-weight:900;text-transform:uppercase;letter-spacing:1.2px;color:var(--blue-mid);padding:18px 24px 12px;border-bottom:2px solid var(--blue-light);display:flex;justify-content:space-between;align-items:center;}
+
+  /* STATS */
+  .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:18px 24px;}
+  .stat-chip{background:var(--blue-light);border-radius:var(--radius-sm);padding:14px 10px;text-align:center;}
+  .stat-chip .snum{font-size:1.6rem;font-weight:900;color:var(--blue-mid);line-height:1;}
+  .stat-chip .slbl{font-size:.7rem;font-weight:800;color:var(--muted);margin-top:6px;text-transform:uppercase;}
+  .stat-chip.gold{background:var(--gold-light);} .stat-chip.gold .snum{color:#d97706;}
+  .stat-chip.green{background:var(--green-light);} .stat-chip.green .snum{color:#16a34a;}
+  .stat-chip.purple{background:var(--purple-light);} .stat-chip.purple .snum{color:var(--purple);}
+  .stat-chip.red2{background:var(--red-soft);} .stat-chip.red2 .snum{color:var(--red);}
+
+  /* QUICK NAV */
+  .quick-nav{display:flex;flex-direction:column;gap:6px;padding:12px 16px 20px;}
+  .qnav-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:var(--radius-sm);font-size:.85rem;font-weight:800;color:var(--text);cursor:pointer;transition:all .2s;}
+  .qnav-item:hover{background:var(--bg);}
+  .qnav-item.active-q{background:var(--blue-light);color:var(--blue-dark);}
+  .qnav-icon{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;background:var(--card);box-shadow:0 2px 6px rgba(0,0,0,.05);flex-shrink:0;}
+  .qnav-item.active-q .qnav-icon{background:#fff;}
+
+  /* -------------------------------------- */
+  /* CARD HEAD (FOR TAB PANELS) */
+  /* -------------------------------------- */
+  .card-head{background:linear-gradient(90deg,var(--blue-dark),var(--blue-mid));color:#fff;padding:16px 24px;display:flex;align-items:center;justify-content:space-between;}
+  .card-head-title{font-size:.9rem;font-weight:900;text-transform:uppercase;letter-spacing:1px;}
+  .card-head-sub{font-size:.8rem;opacity:.8;margin-top:3px;font-weight:600;}
+
+  /* -------------------------------------- */
+  /* COMPONENTS */
+  /* -------------------------------------- */
+  /* PILLS */
+  .pill{display:inline-flex;align-items:center;font-size:.7rem;font-weight:900;padding:4px 12px;border-radius:20px;text-transform:uppercase;letter-spacing:.3px;}
+  .pill-green{background:var(--green-light);color:#16a34a;}
+  .pill-red{background:var(--red-soft);color:var(--red);}
+  .pill-gold{background:var(--gold-light);color:#d97706;}
+  .pill-blue{background:var(--blue-light);color:var(--blue-mid);}
+
+  /* TIMELINE */
+  .timeline{padding:20px 24px;}
+  .tl-item{display:flex;gap:16px;margin-bottom:20px;position:relative;align-items:flex-start;}
+  .tl-item:not(:last-child)::before{content:'';position:absolute;left:20px;top:40px;bottom:-10px;width:2px;background:var(--border);}
+  .tl-icon{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.1rem;flex-shrink:0;z-index:1;}
+  .tl-date{font-size:.8rem;font-weight:900;color:var(--text);margin-bottom:3px;}
+  .tl-title{font-size:.85rem;font-weight:700;color:var(--text);}
+  .tl-note{font-size:.8rem;color:var(--muted);font-weight:600;margin-top:4px;background:var(--bg);padding:8px 12px;border-radius:8px;display:inline-block;}
+
+  /* TABLE */
+  .att-table-wrap{padding:20px 24px 24px;overflow-x:auto;}
+  .att-table{width:100%;border-collapse:collapse;font-size:.85rem;}
+  .att-table th{background:var(--blue-dark);color:#fff;padding:12px 16px;text-align:left;font-weight:800;font-size:.75rem;text-transform:uppercase;letter-spacing:.5px;}
+  .att-table th:first-child{border-radius:12px 0 0 0;} .att-table th:last-child{border-radius:0 12px 0 0;}
+  .att-table td{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:700;vertical-align:middle;color:var(--text);}
+  .att-table tr:hover td{background:var(--bg);}
+
+  /* CALENDAR */
+  .calendar{padding:20px 24px;}
+  .cal-header{display:grid;grid-template-columns:repeat(7,1fr);text-align:center;font-size:.75rem;font-weight:900;color:var(--muted);margin-bottom:10px;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:800;border-radius:10px;background:var(--bg);color:var(--text);}
+  .cal-day.empty{background:transparent;}
+  .cal-day.today{border:2px solid var(--blue-mid);color:var(--blue-mid);}
+  .cal-day.present{background:var(--green-light);color:#16a34a;}
+  .cal-day.absent{background:var(--red-soft);color:var(--red);}
+  .cal-day.late{background:var(--gold-light);color:#d97706;}
+  .cal-legend{display:flex;gap:14px;margin-top:16px;justify-content:center;font-size:.75rem;font-weight:800;color:var(--muted);}
+  .cal-legend span{display:flex;align-items:center;gap:6px;}
+  .cal-legend i{width:10px;height:10px;border-radius:3px;}
+
+  /* LESSONS */
+  .filter-row{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;gap:10px;overflow-x:auto;}
+  .filter-btn{padding:8px 16px;border-radius:20px;font-size:.8rem;font-weight:800;color:var(--muted);background:var(--bg);border:none;cursor:pointer;white-space:nowrap;transition:all .2s;}
+  .filter-btn.active{background:var(--blue-dark);color:#fff;}
+  .lesson-entry{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;gap:16px;}
+  .le-icon{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;background:var(--blue-light);flex-shrink:0;}
+  .le-content{flex:1;}
+  .le-title{font-size:.95rem;font-weight:800;color:var(--blue-dark);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;}
+  .le-sub{font-size:.8rem;color:var(--muted);font-weight:700;line-height:1.5;}
+  .hw-box{background:var(--gold-light);border-left:4px solid var(--gold);padding:14px;margin-top:12px;border-radius:8px;}
+  .hw-title{font-size:.8rem;font-weight:900;color:#92400e;margin-bottom:6px;text-transform:uppercase;}
+  .hw-item{display:flex;justify-content:space-between;align-items:center;font-size:.85rem;font-weight:700;color:var(--text);margin-top:6px;padding-bottom:6px;border-bottom:1px dashed rgba(217,119,6,.2);}
+  .hw-item:last-child{border-bottom:none;padding-bottom:0;}
+
+  /* NOTIFICATIONS */
+  .notif-item{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;gap:16px;transition:background .2s;}
+  .notif-item.unread{background:var(--blue-light);}
+  .notif-icon{width:42px;height:42px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:1.2rem;box-shadow:0 2px 8px rgba(0,0,0,.05);flex-shrink:0;}
+  .notif-item.unread .notif-icon{background:var(--blue-mid);color:#fff;}
+  .notif-title{font-size:.9rem;font-weight:800;color:var(--text);margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+  .unread-dot{width:8px;height:8px;background:var(--red);border-radius:50%;}
+  .notif-desc{font-size:.85rem;color:var(--muted);font-weight:600;line-height:1.4;}
+  .notif-time{font-size:.7rem;font-weight:800;color:var(--blue-mid);margin-top:8px;}
+
+  /* PARENTS */
+  .parent-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:20px 24px 24px;}
+  .parent-card-inner{background:var(--bg);border-radius:var(--radius-sm);padding:20px;display:flex;flex-direction:column;gap:12px;border:1px solid var(--border);}
+  .parent-card-head{display:flex;align-items:center;gap:14px;}
+  .parent-avatar{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;}
+  .pa-dad{background:var(--blue-light);} .pa-mom{background:#fce7f3;}
+  .pa-name{font-size:1.05rem;font-weight:900;color:var(--text);}
+  .pa-role{font-size:.75rem;color:var(--muted);font-weight:800;text-transform:uppercase;margin-top:2px;}
+  .pd-row{display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:700;color:var(--text);background:#fff;padding:10px 14px;border-radius:8px;}
+  .pd-label{color:var(--muted);min-width:65px;font-weight:800;}
+
+  /* BTN SUBMIT HW */
+  .btn-submit-hw {
+    font-size:0.65rem; border:none; cursor:pointer; font-family:inherit; 
+    transition:transform 0.2s, background 0.2s; box-shadow:0 2px 4px rgba(229, 62, 62, 0.2);
+  }
+  .btn-submit-hw:hover:not(:disabled) {
+    transform:scale(1.05); background:#dc2626; color:#fff;
+  }
+  .btn-submit-hw:disabled {
+    opacity:0.7; cursor:not-allowed;
+  }
+
+  @media(max-width:850px){
+    .page-wrap{grid-template-columns:1fr;}
+    .parent-grid{grid-template-columns:1fr;}
+    .stat-grid{grid-template-columns:1fr 1fr;}
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN OVERLAY -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <div class="login-logo"><img src="https://wewin.edu.vn/wp-content/uploads/2023/07/Artboard-1-copy@1x-e1690017564880.png" alt="WeWIN Education" onerror="this.src=''"></div>
+    <div class="login-subtitle">Hệ thống Báo Bài & Hồ Sơ</div>
+    <div class="login-field">
+      <label class="login-label">Mã học sinh <span class="req">*</span></label>
+      <input class="login-input" type="text" id="loginUser" placeholder="Nhập mã học sinh">
+    </div>
+    <div class="login-field">
+      <label class="login-label">Mật khẩu <span class="req">*</span></label>
+      <input class="login-input" type="password" id="loginPass" placeholder="Nhập SĐT Mẹ...">
+    </div>
+    <button class="login-btn" onclick="doLogin()">Đăng Nhập</button>
+    <div class="login-error" id="loginError">Đang xử lý...</div>
+  </div>
+</div>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="topbar-logo"><img src="https://wewin.edu.vn/wp-content/uploads/2023/07/Artboard-1-copy@1x-e1690017564880.png" alt="WeWIN Education" onerror="this.src=''"></div>
+  <nav class="topbar-nav">
+    <a onclick="switchTab('ho-so')" id="nav-ho-so" class="active">🏠 Hồ Sơ</a>
+    <a onclick="switchTab('diem-danh')" id="nav-diem-danh">📋 Điểm Danh</a>
+    <a onclick="switchTab('bai-hoc')" id="nav-bai-hoc">📚 Bài Học</a>
+    <a onclick="switchTab('thong-bao')" id="nav-thong-bao">🔔 Thông Báo <span class="nav-badge" id="notif-badge">0</span></a>
+    <a onclick="switchTab('phu-huynh')" id="nav-phu-huynh">👨‍👩‍👧 Phụ Huynh</a>
+  </nav>
+  <div class="topbar-user" onclick="toggleDropdown()">
+    <div class="avatar-sm">Ph</div> Phụ Huynh ▾
+    <div class="user-dropdown" id="userDropdown">
+      <div class="dropdown-item" onclick="doLogout()">🚪 Đăng xuất</div>
+    </div>
+  </div>
+</header>
+
+<div class="page-wrap">
+  
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="card">
+      <div class="profile-header">
+        <div class="avatar-wrap">
+          <div class="avatar-placeholder" id="sb-avatar">🐷</div>
+          <div class="online-dot"></div>
+        </div>
+        <div class="profile-name" id="sb-name">Đang tải...</div>
+        <div class="badge-class" id="sb-class">...</div>
+        <div class="profile-nickname" id="sb-nickname"></div>
+      </div>
+      <div class="profile-body">
+        <div class="info-row"><span>👨</span><span class="ilbl">Ba:</span><span class="ival" id="sb-dad">Đang tải...</span></div>
+        <div class="info-row"><span>👩</span><span class="ilbl">Mẹ:</span><span class="ival" id="sb-mom">Đang tải...</span></div>
+        <div class="info-row"><span>📅</span><span class="ilbl">Sinh:</span><span class="ival" id="sb-dob">Đang tải...</span></div>
+      </div>
+    </div>
+
+    <!-- QUICK NAV -->
+    <div class="card">
+      <div class="section-title">Truy Cập Nhanh</div>
+      <div class="quick-nav">
+        <div class="qnav-item active-q" onclick="switchTab('ho-so')" id="qnav-ho-so"><div class="qnav-icon">🏠</div> Tổng quan</div>
+        <div class="qnav-item" onclick="switchTab('diem-danh')" id="qnav-diem-danh"><div class="qnav-icon">📋</div> Xem điểm danh</div>
+        <div class="qnav-item" onclick="switchTab('bai-hoc')" id="qnav-bai-hoc"><div class="qnav-icon">📚</div> Bài tập về nhà</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Tổng Quan Điểm Danh</div>
+      <div class="stat-grid">
+        <div class="stat-chip"><div class="snum" id="sb-total">0</div><div class="slbl">Tổng buổi</div></div>
+        <div class="stat-chip green"><div class="snum" id="sb-present">0</div><div class="slbl">Có mặt</div></div>
+        <div class="stat-chip red2"><div class="snum" id="sb-absent">0</div><div class="slbl">Vắng</div></div>
+        <div class="stat-chip"><div class="snum" id="sb-rate">0%</div><div class="slbl">Tỉ lệ</div></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============================================== -->
+  <!-- TAB 1: HỒ SƠ TỔNG QUAN -->
+  <!-- ============================================== -->
+  <div class="tab-panel active" id="tab-ho-so">
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-head-title">Chào mừng phụ huynh</div><div class="card-head-sub">Cập nhật tình hình học tập mới nhất</div></div>
+      </div>
+      
+      <!-- MINI CALENDAR IN HOME -->
+      <div class="section-title">Lịch Học Tháng Này</div>
+      <div class="calendar">
+        <div class="cal-header">
+          <div>T2</div><div>T3</div><div>T4</div><div>T5</div><div>T6</div><div>T7</div><div>CN</div>
+        </div>
+        <div class="cal-grid" id="calDays">
+          <!-- Rendered by JS -->
+        </div>
+        <div class="cal-legend">
+          <span><i style="background:var(--green)"></i> Có mặt</span>
+          <span><i style="background:var(--red)"></i> Vắng mặt</span>
+          <span><i style="background:var(--gold)"></i> Trễ/Muộn</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">Hoạt Động Gần Đây</div>
+      <div class="timeline" id="home-timeline">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- TAB 2: ĐIỂM DANH -->
+  <!-- ============================================== -->
+  <div class="tab-panel" id="tab-diem-danh">
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-head-title">Báo Cáo Điểm Danh</div><div class="card-head-sub">Thống kê toàn bộ thời gian</div></div>
+      </div>
+      <div class="stat-grid" style="grid-template-columns:repeat(4,1fr);">
+        <div class="stat-chip"><div class="snum" id="dd-total">0</div><div class="slbl">Tổng buổi</div></div>
+        <div class="stat-chip green"><div class="snum" id="dd-present">0</div><div class="slbl">Có mặt</div></div>
+        <div class="stat-chip gold"><div class="snum" id="dd-late">0</div><div class="slbl">Đi trễ/muộn</div></div>
+        <div class="stat-chip red2"><div class="snum" id="dd-absent">0</div><div class="slbl">Vắng</div></div>
+      </div>
+    </div>
+    
+    <div class="card">
+      <div class="section-title">Lịch Sử Chi Tiết</div>
+      <div class="att-table-wrap">
+        <table class="att-table">
+          <thead><tr><th>Ngày</th><th>Thứ</th><th>Trạng thái</th><th>Ghi chú</th></tr></thead>
+          <tbody id="att-table-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- TAB 3: BÀI HỌC (TKB) -->
+  <!-- ============================================== -->
+  <div class="tab-panel" id="tab-bai-hoc">
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-head-title">Tiến Độ Bài Học & Bài Tập</div><div class="card-head-sub">Theo dõi nội dung giảng dạy trên lớp</div></div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-chip"><div class="snum" id="tkb-total">0</div><div class="slbl">Tổng bài học</div></div>
+        <div class="stat-chip red2"><div class="snum" id="tkb-hw">0</div><div class="slbl">Bài tập chưa xong</div></div>
+      </div>
+      <div class="filter-row">
+        <button class="filter-btn active">Tất cả bài học</button>
+      </div>
+      <div class="date-navigator">
+        <button class="btn-date" onclick="changeDate(-1)">❮ Trước</button>
+        <div class="date-label" id="currentDateLabel">Hôm nay</div>
+        <button class="btn-date" id="btnNextDate" onclick="changeDate(1)">Sau ❯</button>
+      </div>
+      <div id="lesson-list">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- TAB 4: THÔNG BÁO -->
+  <!-- ============================================== -->
+  <div class="tab-panel" id="tab-thong-bao">
+    <div class="card">
+      <div class="card-head">
+        <div><div class="card-head-title">Hộp Thư Thông Báo</div><div class="card-head-sub">Cảnh báo hệ thống & Nhắc nhở</div></div>
+        <button onclick="markAllRead()" style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 12px;border-radius:14px;font-size:.75rem;font-weight:800;cursor:pointer;">Đánh dấu đã đọc</button>
+      </div>
+      <div id="notif-list">
+        <!-- Rendered by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================== -->
+  <!-- TAB 5: PHỤ HUYNH -->
+  <!-- ============================================== -->
+  <div class="tab-panel" id="tab-phu-huynh">
+    <div class="card">
+      <div class="section-title">Hồ Sơ Liên Hệ</div>
+      <div class="parent-grid">
+        <div class="parent-card-inner">
+          <div class="parent-card-head">
+            <div class="parent-avatar pa-dad">👨</div>
+            <div><div class="pa-name" id="ph-dad-name">Đang tải...</div><div class="pa-role">Ba của bé</div></div>
+          </div>
+          <div class="pd-row"><span class="pd-label">📞 SĐT:</span><span id="ph-dad-phone">--</span></div>
+        </div>
+        <div class="parent-card-inner">
+          <div class="parent-card-head">
+            <div class="parent-avatar pa-mom">👩</div>
+            <div><div class="pa-name" id="ph-mom-name">Đang tải...</div><div class="pa-role">Mẹ của bé</div></div>
+          </div>
+          <div class="pd-row"><span class="pd-label">📞 SĐT:</span><span id="ph-mom-phone">--</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- SCRIPT LOGIC -->
+<script>
+  // Thay URL dưới đây bằng URL Web App mới nhất bạn vừa copy ở Bước 1
+const API_URL = "https://script.google.com/macros/s/AKfycbwfuFI1CmeyND0txCg8jgc0wKJ2y5VmM84OzBdudJlRlJQjACusNF-V95OsAQepobXn/exec";
+// --- BIẾN TOÀN CỤC ---
+let globalTKB = [];
+let viewDate = new Date();
+
+// --- UI CONTROLS ---
+const TABS=['ho-so','diem-danh','bai-hoc','thong-bao','phu-huynh'];
+function switchTab(id) {
+  TABS.forEach(t => {
+    let panel = document.getElementById('tab-'+t);
+    let nav = document.getElementById('nav-'+t);
+    let qnav = document.getElementById('qnav-'+t);
+    if(panel) panel.classList.toggle('active', t===id);
+    if(nav) nav.classList.toggle('active', t===id);
+    if(qnav) qnav.classList.toggle('active-q', t===id);
+  });
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+// --- XỬ LÝ DROPDOWN USER ---
+function toggleDropdown() {
+  document.getElementById('userDropdown').classList.toggle('show');
+}
+window.onclick = function(event) {
+  if (!event.target.closest('.topbar-user')) {
+    let dropdown = document.getElementById('userDropdown');
+    if (dropdown && dropdown.classList.contains('show')) dropdown.classList.remove('show');
+  }
+}
+
+// --- XỬ LÝ ĐĂNG XUẤT ---
+function doLogout() {
+  document.getElementById('loginPass').value = '';
+  document.getElementById('loginError').classList.remove('show');
+  document.getElementById('loginOverlay').style.display = 'flex';
+  switchTab('ho-so');
+  document.getElementById('userDropdown').classList.remove('show');
+}
+
+function markAllRead() {
+  document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
+  const b = document.getElementById('notif-badge');
+  if(b) b.style.display = 'none';
+}
+
+function showError(msg, isError = true) {
+  const err = document.getElementById('loginError');
+  err.textContent = msg;
+  err.style.background = isError ? "var(--red-soft)" : "var(--green-light)";
+  err.style.color = isError ? "var(--red)" : "#16a34a";
+  err.classList.add('show');
+}
+
+// --- LOGIN PROCESS ---
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value.trim();
+  const btn = document.querySelector('.login-btn');
+  if(!u || !p) return showError("Vui lòng điền đủ thông tin.");
+  
+  btn.textContent = "Đang xử lý..."; btn.disabled = true;
+
+  // Gọi API thay vì dùng google.script.run
+  fetch(`${API_URL}?action=login&username=${encodeURIComponent(u)}&password=${encodeURIComponent(p)}`)
+    .then(response => response.json())
+    .then(res => {
+      btn.textContent = "Đăng Nhập"; btn.disabled = false;
+      if (res.status === "success") {
+        document.getElementById('loginOverlay').style.display = 'none';
+        renderData(res);
+      } else showError(res.message);
+    })
+    .catch(err => {
+      btn.textContent = "Đăng Nhập"; btn.disabled = false;
+      showError("Lỗi đường truyền kết nối.");
+    });
+}
+
+// --- CẬP NHẬT TRẠNG THÁI BÀI TẬP ---
+function markHwDone(dateStr, hwIndex, btnEl) {
+  const u = document.getElementById('loginUser').value.trim();
+  const originalText = btnEl.textContent;
+  
+  btnEl.textContent = "Đang gửi...";
+  btnEl.disabled = true;
+
+  fetch(`${API_URL}?action=updateHw&username=${encodeURIComponent(u)}&dateStr=${encodeURIComponent(dateStr)}&hwIndex=${hwIndex}`)
+    .then(response => response.json())
+    .then(res => {
+      if(res.status === "success") {
+        btnEl.className = "pill pill-green";
+        btnEl.textContent = "Đã hoàn thành";
+        btnEl.disabled = true;
+        
+        let hwCountEl = document.getElementById('tkb-hw');
+        if(hwCountEl) {
+          let currCount = parseInt(hwCountEl.textContent) || 0;
+          if(currCount > 0) hwCountEl.textContent = currCount - 1;
+        }
+        
+        let targetDay = globalTKB.find(item => item.date === dateStr);
+        if(targetDay && targetDay.hw[hwIndex]) targetDay.hw[hwIndex].status = "Hoàn thành";
+      } else {
+        alert("Lỗi: " + res.message);
+        btnEl.textContent = originalText;
+        btnEl.disabled = false;
+      }
+    })
+    .catch(err => {
+      alert("Lỗi đường truyền! Vui lòng thử lại.");
+      btnEl.textContent = originalText;
+      btnEl.disabled = false;
+    });
+}
+
+// --- XỬ LÝ CHUYỂN NGÀY TKB ---
+function getFormattedDateStr(d) {
+  let day = ('0' + d.getDate()).slice(-2);
+  let month = ('0' + (d.getMonth() + 1)).slice(-2);
+  let year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+function changeDate(daysOffset) {
+  // 1. Tạo mốc thời gian chuẩn (Cắt bỏ giờ phút giây để so sánh chính xác)
+  let today = new Date();
+  today.setHours(0,0,0,0);
+  
+  let nextDate = new Date(viewDate);
+  nextDate.setDate(viewDate.getDate() + daysOffset);
+  nextDate.setHours(0,0,0,0);
+
+  // 2. CHỐT CHẶN: Nếu ngày muốn xem lớn hơn hôm nay -> Hủy lệnh, không làm gì cả
+  if (nextDate > today) return;
+
+  // 3. Nếu hợp lệ, cập nhật ngày đang xem
+  viewDate.setDate(viewDate.getDate() + daysOffset);
+  let viewDateStr = getFormattedDateStr(viewDate);
+  let todayStr = getFormattedDateStr(new Date());
+  
+  // 4. In ngày ra màn hình
+  let label = document.getElementById('currentDateLabel');
+  if (viewDateStr === todayStr) {
+    label.innerText = "Hôm nay (" + viewDateStr + ")";
+  } else {
+    label.innerText = viewDateStr;
+  }
+  
+  // 5. KHÓA/MỞ KHÓA NÚT "SAU ❯"
+  let btnNext = document.getElementById('btnNextDate');
+  if (btnNext) {
+    if (viewDateStr === todayStr) {
+      btnNext.disabled = true; // Đã tới hôm nay -> Khóa nút mờ đi
+    } else {
+      btnNext.disabled = false; // Ở trong quá khứ -> Mở khóa nút
+    }
+  }
+  
+  // 6. Kéo dữ liệu bài học ra
+  hienThiBaiHocTheoNgay(viewDateStr); 
+}
+
+function hienThiBaiHocTheoNgay(dateStr) {
+  let lList = document.getElementById('lesson-list');
+  lList.innerHTML = '';
+  
+  let dataNgayXem = globalTKB.filter(item => item.date === dateStr);
+  
+  if(dataNgayXem.length === 0) {
+    lList.innerHTML = `<div style="padding:32px 24px; text-align:center; color:var(--muted); font-weight:700;">Không có lịch học hoặc bài tập trong ngày này.</div>`;
+    return;
+  }
+
+  dataNgayXem.forEach(item => {
+    let contentStr = (item.content || "").toString();
+    contentStr = contentStr.replace(/\\n/g, '\n');
+    contentStr = contentStr.replace(/\s+(?=\d+[\/\.\-\)]?\s+[A-ZĐÁÀẢÃẠÂẤẦẨẪẬĂẮẰẲẴẶÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴ])/g, '\n');
+    
+    let lines = contentStr.split(/\n/);
+    let subText = "";
+    let questionItems = "";
+    let currentNum = "";
+    let currentQText = "";
+
+    const buildQuestionItem = (num, text) => {
+      return `
+        <div style="display:flex; gap:14px; padding:14px 18px; background:#f4f7fc; border-radius:12px; margin-bottom:12px; border: 1px solid #e1e7f0; align-items:flex-start;">
+           <div style="width:28px; height:28px; background:var(--blue-mid); color:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center; font-weight:900; flex-shrink:0; font-size:0.9rem; box-shadow:0 2px 6px rgba(39,85,200,0.3); margin-top:2px;">${num}</div>
+           <div style="font-size:0.9rem; font-weight:700; color:var(--text); line-height:1.6;">${text}</div>
+        </div>
+      `;
+    };
+
+    lines.forEach(line => {
+      line = line.trim();
+      if(!line) return;
+      let match = line.match(/^(\d+)[\/\.\-\)]?\s*(.*)$/);
+      if(match) {
+        if(currentNum) questionItems += buildQuestionItem(currentNum, currentQText);
+        currentNum = match[1]; currentQText = match[2];
+      } else {
+        if(currentNum) currentQText += "<br>" + line;
+        else subText += line + "<br>";
+      }
+    });
+    if(currentNum) questionItems += buildQuestionItem(currentNum, currentQText);
+
+    let hwHtml = '';
+    item.hw.forEach((h, index) => {
+      let isDone = (h.status.toLowerCase().includes("hoàn thành"));
+      let pillBtn = isDone 
+        ? `<span class="pill pill-green" style="font-size:0.65rem;">${h.status || "Hoàn thành"}</span>`
+        : `<button class="pill pill-red btn-submit-hw" onclick="markHwDone('${item.date}', ${index}, this)" title="Nhấn để gửi báo cáo hoàn thành">Chưa làm (Nộp)</button>`;
+        
+      hwHtml += `<div class="hw-item"><span>- ${h.desc}</span>${pillBtn}</div>`;
+    });
+    
+    let hwBox = hwHtml ? `<div class="hw-box"><div class="hw-title">📝 Bài Tập Về Nhà</div>${hwHtml}</div>` : '';
+    let statusPill = item.lessonStatus ? `<span class="pill pill-blue">${item.lessonStatus}</span>` : '';
+
+    lList.innerHTML += `
+      <div class="lesson-entry">
+        <div class="le-icon">📚</div>
+        <div class="le-content">
+          <div class="le-title">Khung bài giảng ${statusPill}</div>
+          <div class="le-sub" style="margin-bottom: ${questionItems ? '14px' : '0'};">${subText}</div>
+          <div class="le-questions">${questionItems}</div>
+          ${hwBox}
+        </div>
+      </div>
+    `;
+  });
+}
+
+// --- RENDER DỮ LIỆU TỔNG ---
+function renderData(data) {
+  const hs = data.thongTin;
+  const ddData = data.diemDanh || [];
+  globalTKB = data.tkb || []; // Gán TKB vào bộ nhớ toàn cục
+
+  // 1. INFO
+  document.getElementById('sb-name').textContent = hs.ten || "Trống";
+  document.getElementById('sb-class').textContent = hs.lop || "Trống";
+  document.getElementById('sb-nickname').textContent = hs.bietDanh ? `"${hs.bietDanh}"` : "";
+  document.getElementById('sb-dad').textContent = hs.tenBa || "Trống";
+  document.getElementById('sb-mom').textContent = hs.tenMe || "Trống";
+  document.getElementById('sb-dob').textContent = hs.ngaySinh || "Trống";
+  if(hs.avatar && hs.avatar.includes("http")) {
+    document.getElementById('sb-avatar').innerHTML = `<img src="${hs.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+  }
+  
+  document.getElementById('ph-dad-name').textContent = hs.tenBa || "Ba của bé";
+  document.getElementById('ph-dad-phone').textContent = hs.sdtBa || "--";
+  document.getElementById('ph-mom-name').textContent = hs.tenMe || "Mẹ của bé";
+  document.getElementById('ph-mom-phone').textContent = hs.sdtMe || "--";
+
+  // 2. XỬ LÝ ĐIỂM DANH
+  let coMat = 0, tre = 0, vang = 0;
+  let tBody = document.getElementById('att-table-body');
+  tBody.innerHTML = '';
+  let homeTimeline = document.getElementById('home-timeline');
+  homeTimeline.innerHTML = '';
+  
+  let attMapForCalendar = {}; 
+
+  if (ddData.length > 0) {
+    const reversedDD = ddData.slice().reverse();
+    reversedDD.forEach((r, idx) => {
+      let thu = r[0], ngayStr = r[1], statusRaw = r[2], note = r[3];
+      let st = (statusRaw || "").toLowerCase();
+      
+      if (st.includes("có mặt")) coMat++;
+      else if (st.includes("trễ") || st.includes("muộn")) tre++;
+      else if (st.includes("vắng") || st.includes("nghỉ")) vang++;
+
+      attMapForCalendar[ngayStr] = st;
+      let color = st.includes("có mặt") ? "green" : (st.includes("vắng") || st.includes("nghỉ") ? "red" : "gold");
+      tBody.innerHTML += `<tr><td>${ngayStr}</td><td>${thu}</td><td><span class="pill pill-${color}">${statusRaw}</span></td><td>${note||"–"}</td></tr>`;
+
+      if (idx < 3) {
+        let icon = st.includes("có mặt") ? "✅" : (st.includes("vắng")||st.includes("nghỉ") ? "❌" : "⏰");
+        homeTimeline.innerHTML += `
+          <div class="tl-item">
+            <div class="tl-icon" style="background:var(--${color}-light)">${icon}</div>
+            <div style="flex:1">
+              <div class="tl-date">${thu}, ${ngayStr} <span class="pill pill-${color}" style="margin-left:8px">${statusRaw}</span></div>
+              ${note ? `<div class="tl-note">${note}</div>` : ''}
+            </div>
+          </div>
+        `;
+      }
+    });
+  } else {
+    tBody.innerHTML = `<tr><td colspan="4" style="text-align:center">Chưa có dữ liệu</td></tr>`;
+    homeTimeline.innerHTML = `<div style="text-align:center;color:var(--muted);font-weight:600;">Chưa có hoạt động.</div>`;
+  }
+
+  let totalDD = ddData.length;
+  let rate = totalDD > 0 ? Math.round((coMat/totalDD)*100) : 0;
+  document.getElementById('sb-total').textContent = totalDD;
+  document.getElementById('sb-present').textContent = coMat;
+  document.getElementById('sb-absent').textContent = vang;
+  document.getElementById('sb-rate').textContent = rate + "%";
+  document.getElementById('dd-total').textContent = totalDD;
+  document.getElementById('dd-present').textContent = coMat;
+  document.getElementById('dd-late').textContent = tre; 
+  document.getElementById('dd-absent').textContent = vang;
+
+  // 3. TÍNH TỔNG BÀI TẬP VÀ HIỂN THỊ LỊCH HÔM NAY
+  let hwMissing = 0;
+  document.getElementById('tkb-total').textContent = globalTKB.length;
+  globalTKB.forEach(item => {
+    item.hw.forEach(h => { if(!h.status.toLowerCase().includes("hoàn thành")) hwMissing++; });
+  });
+  document.getElementById('tkb-hw').textContent = hwMissing;
+
+  // Gọi hàm kích hoạt xem lịch ngày hôm nay
+  viewDate = new Date();
+  changeDate(0);
+
+  // 4. VẼ LỊCH
+  renderCalendar(attMapForCalendar);
+
+  // 5. TẠO THÔNG BÁO TỰ ĐỘNG
+  renderNotifications(ddData, hwMissing);
+}
+
+function renderCalendar(attMap) {
+  const cal = document.getElementById('calDays');
+  cal.innerHTML = '';
+  let now = new Date();
+  let y = now.getFullYear(); let m = now.getMonth();
+  let firstDay = new Date(y, m, 1).getDay();
+  let offset = firstDay === 0 ? 6 : firstDay - 1; 
+  let daysInMonth = new Date(y, m + 1, 0).getDate();
+  let today = now.getDate();
+
+  for(let i=0; i<offset; i++) cal.innerHTML += `<div class="cal-day empty"></div>`;
+  
+  for(let d=1; d<=daysInMonth; d++) {
+    let dStr = (d<10?'0':'')+d + '/' + (m+1<10?'0':'')+(m+1) + '/' + y;
+    let cls = 'cal-day';
+    if(d === today) cls += ' today';
+    
+    if(attMap[dStr]) {
+      let st = attMap[dStr];
+      if(st.includes("có mặt")) cls += ' present';
+      else if(st.includes("trễ") || st.includes("muộn")) cls += ' late';
+      else if(st.includes("vắng") || st.includes("nghỉ")) cls += ' absent';
+    }
+    cal.innerHTML += `<div class="${cls}">${d}</div>`;
+  }
+}
+
+function renderNotifications(ddData, hwMissing) {
+  const nList = document.getElementById('notif-list');
+  const badge = document.getElementById('notif-badge');
+  nList.innerHTML = '';
+  let unread = 0;
+
+  nList.innerHTML += createNotifHTML('🔵', 'Hệ thống WeWIN', 'Chào mừng phụ huynh đăng nhập thành công. Vui lòng theo dõi tình hình học tập thường xuyên.', 'Vừa xong');
+
+  if(hwMissing > 0) {
+    nList.innerHTML += createNotifHTML('⚠️', 'Nhắc nhở Bài tập', `Bé đang có ${hwMissing} bài tập chưa hoàn thành. Phụ huynh vui lòng kiểm tra Tab Bài Học.`, 'Quan trọng', true);
+    unread++;
+  }
+
+  let absents = ddData.filter(r => (r[2]||"").toLowerCase().includes("vắng"));
+  if(absents.length > 0) {
+    let last = absents[absents.length - 1];
+    nList.innerHTML += createNotifHTML('❌', 'Thông báo vắng mặt', `Bé được ghi nhận vắng mặt vào ngày ${last[1]}.`, 'Hệ thống', true);
+    unread++;
+  }
+
+  if(unread > 0){
+    badge.style.display = 'block';
+    badge.textContent = unread;
+  }
+}
+
+function createNotifHTML(icon, title, desc, time, isUnread=false) {
+  return `
+    <div class="notif-item ${isUnread ? 'unread' : ''}">
+      <div class="notif-icon">${icon}</div>
+      <div style="flex:1">
+        <div class="notif-title">${title} ${isUnread ? '<div class="unread-dot"></div>' : ''}</div>
+        <div class="notif-desc">${desc}</div>
+        <div class="notif-time">${time}</div>
+      </div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>
