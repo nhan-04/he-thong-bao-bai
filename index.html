@@ -200,9 +200,52 @@
   .filter-btn.active{background:var(--main-dark);color:#fff;}
   .lesson-entry{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;gap:16px;}
   .le-icon{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;background:var(--main-light);flex-shrink:0;}
-  .le-content{flex:1;}
+  .le-content{flex:1; width: 100%; overflow: hidden;}
   .le-title{font-size:.95rem;font-weight:900;color:var(--main-dark);margin-bottom:4px;display:flex;justify-content:space-between;align-items:center;}
   .le-sub{font-size:.8rem;color:var(--muted);font-weight:700;line-height:1.5;}
+  
+  /* CSS CHO KHUNG ẢNH BÀI GIẢNG */
+  .le-image-wrapper {
+    margin-top: 14px;
+    margin-bottom: 14px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,107,24,0.1);
+    border: 2px solid var(--main-light);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    max-width: 100%;
+  }
+  .le-image-wrapper img {
+    width: 100%;
+    max-height: 350px;
+    object-fit: cover; /* Cắt cúp ảnh cho vừa vặn không bị méo */
+    display: block;
+    transition: transform 0.3s ease;
+  }
+  .le-image-wrapper img:hover {
+    transform: scale(1.02);
+  }
+  .le-img-link {
+    display: block;
+    width: 100%;
+    text-align: center;
+    padding: 10px;
+    background: var(--main-light);
+    color: var(--main-dark);
+    font-size: 0.85rem;
+    font-weight: 800;
+    text-decoration: none;
+    border-top: 1px solid var(--border);
+    transition: background 0.2s;
+  }
+  .le-img-link:hover {
+    background: var(--border);
+  }
+
   .hw-box{background:var(--brand-yellow-light);border-left:4px solid var(--brand-yellow);padding:14px;margin-top:12px;border-radius:8px;}
   .hw-title{font-size:.8rem;font-weight:900;color:#7A6500;margin-bottom:6px;text-transform:uppercase;}
   .hw-item{display:flex;justify-content:space-between;align-items:center;font-size:.85rem;font-weight:700;color:var(--text);margin-top:6px;padding-bottom:6px;border-bottom:1px dashed rgba(184, 151, 0, 0.2);}
@@ -254,7 +297,6 @@
 <div class="login-overlay" id="loginOverlay">
   <div class="login-card">
     <div class="login-logo">
-      <!-- Thay thế link ảnh dưới đây bằng link Logo An's School của bạn trên server -->
       <img src="https://static.kiddihub.com/1/avatar-mam-non-song-ngu-an-ans-school-xa-tan-xuan-Ni0WW0TNbZZVUUmE.jpg" alt="AN'S SCHOOL">
     </div>
     <div class="login-subtitle">Hệ thống Báo Bài & Hồ Sơ</div>
@@ -274,7 +316,6 @@
 <!-- TOPBAR -->
 <header class="topbar">
   <div class="topbar-logo">
-    <!-- Có thể thay placeholder bằng icon nhỏ của An's School -->
     <img src="https://static.kiddihub.com/1/avatar-mam-non-song-ngu-an-ans-school-xa-tan-xuan-Ni0WW0TNbZZVUUmE.jpg" alt="AN'S SCHOOL"> AN'S SCHOOL
   </div>
   <nav class="topbar-nav">
@@ -603,6 +644,28 @@ function markHwDone(dateStr, hwIndex, btnEl) {
   });
 }
 
+// --- HÀM XỬ LÝ CHUYỂN ĐỔI LINK DRIVE ĐỂ HIỂN THỊ ẢNH ---
+function getDriveDirectLink(url) {
+  if (!url) return "";
+  let str = url.trim();
+  // Lọc lấy ID từ định dạng chuẩn của Google Drive (d/ID/view hoặc id=ID)
+  let match = str.match(/\/d\/([a-zA-Z0-9_-]+)/) || str.match(/id=([a-zA-Z0-9_-]+)/);
+  if (match && match[1]) {
+    // SỬ DỤNG THUMBNAIL API ĐỂ TRÁNH BỊ GOOGLE DRIVE CHẶN (CORS/IFRAME LỖI)
+    return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w1000`;
+  }
+  return str; // Nếu không phải link drive chuẩn thì trả về link gốc
+}
+
+// --- HÀM BIẾN ĐỔI TEXT THÀNH LINK (HYPERLINK) TỰ ĐỘNG ---
+function linkify(text) {
+  if (!text) return "";
+  const urlRegex = /(https?:\/\/[^\s<]+)/g;
+  return text.replace(urlRegex, function(url) {
+    return `<a href="${url}" target="_blank" style="color: #008C20; font-weight: 800; text-decoration: underline; word-break: break-all;">${url}</a>`;
+  });
+}
+
 // --- XỬ LÝ CHUYỂN NGÀY TKB ---
 function getFormattedDateStr(d) {
   let day = ('0' + d.getDate()).slice(-2);
@@ -656,6 +719,7 @@ function hienThiBaiHocTheoNgay(dateStr) {
   }
 
   dataNgayXem.forEach(item => {
+    // 1. Xử lý Nội dung bài giảng
     let contentStr = (item.content || "").toString();
     contentStr = contentStr.replace(/\\n/g, '\n');
     contentStr = contentStr.replace(/\s+(?=\d+[\/\.\-\)]?\s+[A-ZĐÁÀẢÃẠÂẤẦẨẪẬĂẮẰẲẴẶÉÈẺẼẸÊẾỀỂỄỆÍÌỈĨỊÓÒỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÚÙỦŨỤƯỨỪỬỮỰÝỲỶỸỴ])/g, '\n');
@@ -680,15 +744,31 @@ function hienThiBaiHocTheoNgay(dateStr) {
       if(!line) return;
       let match = line.match(/^(\d+)[\/\.\-\)]?\s*(.*)$/);
       if(match) {
-        if(currentNum) questionItems += buildQuestionItem(currentNum, currentQText);
+        if(currentNum) questionItems += buildQuestionItem(currentNum, linkify(currentQText));
         currentNum = match[1]; currentQText = match[2];
       } else {
         if(currentNum) currentQText += "<br>" + line;
         else subText += line + "<br>";
       }
     });
-    if(currentNum) questionItems += buildQuestionItem(currentNum, currentQText);
+    if(currentNum) questionItems += buildQuestionItem(currentNum, linkify(currentQText));
+    subText = linkify(subText); // Bật tính năng nhận diện link cho phần mô tả bài học
 
+    // 2. Xử lý Khung Ảnh (Hiển thị nếu Backend trả về link hợp lệ)
+    let imgHtml = "";
+    if (item.imageUrl && item.imageUrl.trim() !== "") {
+      let rawLink = item.imageUrl.trim();
+      let directImgLink = getDriveDirectLink(rawLink);
+      imgHtml = `
+        <div class="le-image-wrapper">
+          <img src="${directImgLink}" alt="Ảnh hoạt động trên lớp" 
+               onerror="this.onerror=null; this.src='https://placehold.co/600x200/E8F5E9/006B18?text=Loi+tai+anh+(Hay+mo+quyen+Drive)';">
+          <a href="${rawLink}" target="_blank" class="le-img-link">🔗 Bấm vào đây để xem ảnh gốc</a>
+        </div>
+      `;
+    }
+
+    // 3. Xử lý Bài tập về nhà
     let hwHtml = '';
     item.hw.forEach((h, index) => {
       let isDone = (h.status.toLowerCase().includes("hoàn thành"));
@@ -696,12 +776,14 @@ function hienThiBaiHocTheoNgay(dateStr) {
         ? `<span class="pill pill-green" style="font-size:0.65rem;">${h.status || "Hoàn thành"}</span>`
         : `<button class="pill pill-red btn-submit-hw" onclick="markHwDone('${item.date}', ${index}, this)" title="Nhấn để gửi báo cáo hoàn thành">Chưa làm (Nộp)</button>`;
         
-      hwHtml += `<div class="hw-item"><span>- ${h.desc}</span>${pillBtn}</div>`;
+      let formattedDesc = linkify(h.desc); // Bật tính năng nhận diện link cho phần bài tập
+      hwHtml += `<div class="hw-item"><span>- ${formattedDesc}</span>${pillBtn}</div>`;
     });
     
     let hwBox = hwHtml ? `<div class="hw-box"><div class="hw-title">📝 Bài Tập Về Nhà</div>${hwHtml}</div>` : '';
     let statusPill = item.lessonStatus ? `<span class="pill pill-blue">${item.lessonStatus}</span>` : '';
 
+    // Lắp ráp HTML
     lList.innerHTML += `
       <div class="lesson-entry">
         <div class="le-icon">📚</div>
@@ -709,6 +791,7 @@ function hienThiBaiHocTheoNgay(dateStr) {
           <div class="le-title">Khung bài giảng ${statusPill}</div>
           <div class="le-sub" style="margin-bottom: ${questionItems ? '14px' : '0'};">${subText}</div>
           <div class="le-questions">${questionItems}</div>
+          ${imgHtml} <!-- KHUNG ẢNH CHÈN VÀO ĐÂY -->
           ${hwBox}
         </div>
       </div>
