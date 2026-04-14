@@ -812,9 +812,16 @@ function renderData(data) {
   document.getElementById('sb-dad').textContent = hs.tenBa || "Trống";
   document.getElementById('sb-mom').textContent = hs.tenMe || "Trống";
   document.getElementById('sb-dob').textContent = hs.ngaySinh || "Trống";
-  if(hs.avatar && hs.avatar.includes("http")) {
-    document.getElementById('sb-avatar').innerHTML = `<img src="${hs.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
-  }
+  if (hs.avatar && hs.avatar.includes("http")) {
+  const avatarUrl = getDriveDirectLink(hs.avatar);
+  document.getElementById('sb-avatar').innerHTML = `
+    <img 
+      src="${avatarUrl}" 
+      style="width:100%;height:100%;border-radius:50%;object-fit:cover;"
+      onerror="this.onerror=null; this.src='https://placehold.co/200x200/E8F5E9/006B18?text=No+Photo';"
+    >
+  `;
+}
   
   document.getElementById('ph-dad-name').textContent = hs.tenBa || "Ba của bé";
   document.getElementById('ph-dad-phone').textContent = hs.sdtBa || "--";
