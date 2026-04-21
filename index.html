@@ -123,8 +123,8 @@
   .profile-body{padding:10px 24px 20px;}
   .info-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px dashed var(--border);font-size:.85rem;}
   .info-row:last-child{border-bottom:none;}
-  .info-row .ilbl{color:var(--muted);font-weight:700;min-width:40px;}
-  .info-row .ival{color:var(--text);font-weight:800;}
+  .info-row .ilbl{font-family: 'Nunito', sans-serif; color:var(--muted);font-weight:700;min-width:40px;}
+  .info-row .ival{font-family: 'Nunito', sans-serif; color:var(--text);font-weight:800;}
 
   .section-title{font-size:.75rem;font-weight:900;text-transform:uppercase;letter-spacing:1.2px;color:var(--main-mid);padding:18px 24px 12px;border-bottom:2px solid var(--main-light);display:flex;justify-content:space-between;align-items:center;}
 
@@ -196,7 +196,8 @@
 
   /* LESSONS */
   .filter-row{padding:16px 24px;border-bottom:1px solid var(--border);display:flex;gap:10px;overflow-x:auto;}
-  .filter-btn{padding:8px 16px;border-radius:20px;font-size:.8rem;font-weight:800;color:var(--muted);background:var(--bg);border:none;cursor:pointer;white-space:nowrap;transition:all .2s;}
+  /* ĐÃ THÊM font-family: inherit; VÀO .filter-btn */
+  .filter-btn{font-family: inherit; padding:8px 16px;border-radius:20px;font-size:.8rem;font-weight:800;color:var(--muted);background:var(--bg);border:none;cursor:pointer;white-space:nowrap;transition:all .2s;}
   .filter-btn.active{background:var(--main-dark);color:#fff;}
   .lesson-entry{padding:20px 24px;border-bottom:1px solid var(--border);display:flex;gap:16px;}
   .le-icon{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;background:var(--main-light);flex-shrink:0;}
@@ -267,10 +268,10 @@
   .parent-card-head{display:flex;align-items:center;gap:14px;}
   .parent-avatar{width:56px;height:56px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.5rem;flex-shrink:0;}
   .pa-dad{background:var(--main-light);} .pa-mom{background:#fce7f3;}
-  .pa-name{font-size:1.05rem;font-weight:900;color:var(--text);}
-  .pa-role{font-size:.75rem;color:var(--muted);font-weight:800;text-transform:uppercase;margin-top:2px;}
-  .pd-row{display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:700;color:var(--text);background:#fff;padding:10px 14px;border-radius:8px;}
-  .pd-label{color:var(--muted);min-width:65px;font-weight:800;}
+  .pa-name{font-family: 'Nunito', sans-serif; font-size:1.05rem;font-weight:900;color:var(--text);}
+  .pa-role{font-family: 'Nunito', sans-serif; font-size:.75rem;color:var(--muted);font-weight:800;text-transform:uppercase;margin-top:2px;}
+  .pd-row{font-family: 'Nunito', sans-serif; display:flex;align-items:center;gap:10px;font-size:.85rem;font-weight:700;color:var(--text);background:#fff;padding:10px 14px;border-radius:8px;}
+  .pd-label{font-family: 'Nunito', sans-serif; color:var(--muted);min-width:65px;font-weight:800;}
 
   /* BTN SUBMIT HW */
   .btn-submit-hw {
@@ -469,7 +470,7 @@
     <div class="card">
       <div class="card-head">
         <div><div class="card-head-title">Hộp Thư Thông Báo</div><div class="card-head-sub">Cảnh báo hệ thống & Nhắc nhở</div></div>
-        <button onclick="markAllRead()" style="background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 12px;border-radius:14px;font-size:.75rem;font-weight:800;cursor:pointer;">Đánh dấu đã đọc</button>
+        <button onclick="markAllRead()" style="font-family: inherit; background:rgba(255,255,255,.2);border:none;color:#fff;padding:6px 12px;border-radius:14px;font-size:.75rem;font-weight:800;cursor:pointer;">Đánh dấu đã đọc</button>
       </div>
       <div id="notif-list">
         <!-- Rendered by JS -->
@@ -812,16 +813,9 @@ function renderData(data) {
   document.getElementById('sb-dad').textContent = hs.tenBa || "Trống";
   document.getElementById('sb-mom').textContent = hs.tenMe || "Trống";
   document.getElementById('sb-dob').textContent = hs.ngaySinh || "Trống";
-  if (hs.avatar && hs.avatar.includes("http")) {
-  const avatarUrl = getDriveDirectLink(hs.avatar);
-  document.getElementById('sb-avatar').innerHTML = `
-    <img 
-      src="${avatarUrl}" 
-      style="width:100%;height:100%;border-radius:50%;object-fit:cover;"
-      onerror="this.onerror=null; this.src='https://placehold.co/200x200/E8F5E9/006B18?text=No+Photo';"
-    >
-  `;
-}
+  if(hs.avatar && hs.avatar.includes("http")) {
+    document.getElementById('sb-avatar').innerHTML = `<img src="${hs.avatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+  }
   
   document.getElementById('ph-dad-name').textContent = hs.tenBa || "Ba của bé";
   document.getElementById('ph-dad-phone').textContent = hs.sdtBa || "--";
